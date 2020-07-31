@@ -7,7 +7,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -400,7 +399,9 @@ public final class Bag {
     manifestBuilder.addEntry(newEntry);
     //copy to new location
     createDirectoriesIfNeeded(newEntry);
-    Files.copy(entry.getPhysicalLocation(), newEntry.getPhysicalLocation(), StandardCopyOption.REPLACE_EXISTING);
+    if (Files.notExists(newEntry.getPhysicalLocation())) {
+      Files.copy(entry.getPhysicalLocation(), newEntry.getPhysicalLocation());
+    }
   }
   
   private void createDirectoriesIfNeeded(final ManifestEntry entry) throws IOException {

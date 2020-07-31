@@ -95,7 +95,40 @@ public class BagTest extends TempFolderTest{
     
     Assertions.assertTrue(Files.exists(expectedTagFile));
     Assertions.assertArrayEquals(Files.readAllBytes(tagFile), Files.readAllBytes(expectedTagFile));
-    
-    
+  }
+
+  @Test
+  public void testInPlaceBagCreation() throws Exception {
+    Path rootDir = createDirectory("tempBuiltBag");
+    Path dataDir = Files.createDirectories(rootDir.resolve("data"));
+    Path originalFile = Paths.get("src", "test", "resources", "bags", "v1_0", "bag", "data", "foo.txt");
+    Path payloadFile = dataDir.resolve(originalFile.getFileName());
+    Files.copy(originalFile, payloadFile);
+
+    BagBuilder builder = new BagBuilder();
+    builder.addAlgorithm("md5")
+            .addPayloadFile(payloadFile)
+            .bagLocation(rootDir)
+            .write();
+
+    Path expectedBagitFile = rootDir.resolve("bagit.txt");
+    Path expectedTagmanifestFile = rootDir.resolve("tagmanifest-md5.txt");
+    Path expectedManifestFile = rootDir.resolve("manifest-md5.txt");
+
+    Assertions.assertTrue(Files.exists(expectedBagitFile));
+    String bagitFileHash = StandardHasher.MD5.hash(expectedBagitFile);
+    Assertions.assertEquals(
+            Arrays.asList("BagIt-Version: 1.0","Tag-File-Character-Encoding: UTF-8"), Files.readAllLines(expectedBagitFile));
+
+    Assertions.assertTrue(Files.exists(expectedManifestFile));
+    String manifestFileHash = StandardHasher.MD5.hash(expectedManifestFile);
+    Assertions.assertEquals(
+            Arrays.asList("b1946ac92492d2347c6235b4d2611184  data/foo.txt"), Files.readAllLines(expectedManifestFile));
+
+    Assertions.assertTrue(Files.exists(expectedTagmanifestFile));
+    Assertions.assertEquals(
+            Arrays.asList(bagitFileHash + "  bagit.txt",
+                    manifestFileHash + "  manifest-md5.txt"),
+            Files.readAllLines(expectedTagmanifestFile));
   }
 }
